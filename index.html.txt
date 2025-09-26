@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Franchisee Sales Designer Dashboard - Downtown Location</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            box-sizing: border-box;
+        }
+        .gradient-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease-in-out;
+        }
+        .table-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #92400e; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e5e7eb); color: #374151; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #d97706); color: white; }
+        .rank-other { background: #f3f4f6; color: #6b7280; }
+        .regional-indicator {
+            position: relative;
+        }
+        .regional-indicator::after {
+            content: '🌟';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 12px;
+        }
+        .sync-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .benchmark-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 4px;
+        }
+        .above-benchmark { background-color: #10b981; }
+        .below-benchmark { background-color: #ef4444; }
+        .at-benchmark { background-color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="gradient-header text-white p-6 shadow-lg">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold">Downtown Location Dashboard</h1>
+                    <p class="text-blue-100">New York, NY • Franchise ID: NYC-001</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                    <div id="regionalSyncStatus" class="flex items-center px-3 py-1 rounded-full bg-white bg-opacity-20">
+                        <div id="syncIndicator" class="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
+                        <span id="syncText" class="text-sm text-white">Synced with Regional</span>
+                    </div>
+                    <div id="connectionStatus" class="flex items-center px-3 py-1 rounded-full bg-white bg-opacity-20">
+                        <div id="statusIndicator" class="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
+                        <span id="statusText" class="text-sm text-white">Online</span>
+                    </div>
+                    <div class="relative">
+                        <select id="timeframe" class="bg-white bg-opacity-20 text-white rounded-lg px-4 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-white">
+                            <option value="week">This Week</option>
+                            <option value="month" selected>This Month</option>
+                            <option value="ytd">Year to Date</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="franchiseSettings" class="bg-white bg-opacity-20 text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-30 transition-colors">
+                            Settings
+                        </button>
+                        <button id="viewRegionalDashboard" class="bg-white bg-opacity-20 text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-30 transition-colors">
+                            View Regional
+                        </button>
+                        <button id="exportData" class="bg-white bg-opacity-20 text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-30 transition-colors">
+                            Export Data
+                        </button>
+                        <button id="addDesigner" class="bg-white text-blue-700 font-medium py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors">
+                            Add Designer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-6">
+            <!-- Franchise Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="card bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500 text-sm font-medium" id="salesCardTitle">Franchise Sales</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="franchiseMonthlySales">$0</p>
+                    <div class="mt-2 flex items-center">
+                        <span class="text-green-500 text-sm font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586l3.293-3.293A1 1 0 0114 7z" clip-rule="evenodd"/>
+                            </svg>
+                            <span id="salesGrowth">0%</span>
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2" id="salesComparisonText">vs last period</span>
+                    </div>
+                </div>
+                <div class="card bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500 text-sm font-medium">Active Designers</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="activeDesigners">0</p>
+                    <p class="text-gray-500 text-sm mt-2" id="regionalRankText">Regional rank: #0</p>
+                </div>
+                <div class="card bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500 text-sm font-medium">Avg Closing Rate</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="avgClosingRate">0%</p>
+                    <div class="mt-2 flex items-center">
+                        <span class="text-blue-500 text-sm font-medium" id="closingRateVsRegional">0%</span>
+                        <span class="text-gray-500 text-sm ml-2">vs regional avg</span>
+                        <div id="closingRateBenchmark" class="benchmark-indicator at-benchmark"></div>
+                    </div>
+                </div>
+                <div class="card bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500 text-sm font-medium">Regional Standing</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="regionalStanding">#0</p>
+                    <p class="text-gray-500 text-sm mt-2" id="regionalStandingText">of 0 franchises</p>
+                </div>
+                <div class="card bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500 text-sm font-medium">Goal Progress</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="goalProgress">0%</p>
+                    <div class="mt-2 progress-bar">
+                        <div class="progress bg-blue-600" id="goalProgressBar" style="width: 0%"></div>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2" id="goalProgressText">$0 of $0</p>
+                </div>
+            </div>
+
+            <!-- Designer Performance Table -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-gray-800">Designer Performance</h2>
+                        <div class="flex items-center space-x-4">
+                            <div class="relative">
+                                <input type="text" id="searchDesigner" placeholder="Search designers..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <div class="absolute left-3 top-2.5 text-gray-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-500">
+                                <div class="w-2 h-2 rounded-full bg-yellow-400 mr-2"></div>
+                                <span>🌟 = Regional Top 10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 table-header">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Local Rank</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Designer</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" id="salesColumnHeader">Period Sales</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Weekly Sales</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg. Ticket</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Closing Rate</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Goal Progress</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Regional Rank</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="designerTableBody">
+                            <!-- Designer rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Local Leaderboard and Regional Insights -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Local Top Performers -->
+                <div class="bg-white rounded-xl shadow overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            Local Top Performers
+                        </h2>
+                    </div>
+                    <div class="p-6" id="localLeaderboard">
+                        <!-- Local leaderboard items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Regional Benchmarks -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow overflow-hidden">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            Regional Performance Insights
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <h3 class="font-semibold text-gray-800">Your Franchise vs Regional</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Monthly Sales</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-medium" id="salesVsRegional">Above avg</span>
+                                            <div id="salesBenchmark" class="benchmark-indicator above-benchmark ml-2"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Closing Rate</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-medium" id="closingVsRegional">At avg</span>
+                                            <div id="closingBenchmark" class="benchmark-indicator at-benchmark ml-2"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Avg Ticket Size</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-medium" id="ticketVsRegional">Below avg</span>
+                                            <div id="ticketBenchmark" class="benchmark-indicator below-benchmark ml-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <h3 class="font-semibold text-gray-800">Regional Rankings</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-700 mb-2">💰 Sales Leaders</h4>
+                                        <div class="space-y-2" id="regionalSalesRankings">
+                                            <!-- Sales rankings will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-700 mb-2">🎯 Conversion Leaders</h4>
+                                        <div class="space-y-2" id="regionalConversionRankings">
+                                            <!-- Conversion rankings will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-700 mb-2">💎 Avg Ticket Leaders</h4>
+                                        <div class="space-y-2" id="regionalTicketRankings">
+                                            <!-- Ticket size rankings will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Franchise Settings Modal -->
+    <div id="franchiseSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Franchise Settings</h3>
+                <button id="closeFranchiseModal" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="franchiseSettingsForm">
+                <div class="mb-4">
+                    <label for="franchiseName" class="block text-sm font-medium text-gray-700 mb-1">Franchise Name</label>
+                    <input type="text" id="franchiseName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="franchiseLocation" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input type="text" id="franchiseLocation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="franchiseId" class="block text-sm font-medium text-gray-700 mb-1">Franchise ID</label>
+                    <input type="text" id="franchiseId" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                    <p class="text-xs text-gray-500 mt-1">Franchise ID cannot be changed after setup</p>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="enableRegionalSync" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">Enable Regional Dashboard Sync</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1">Automatically sync your data with the regional dashboard</p>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" id="cancelFranchiseSettings" class="mr-2 px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">Save Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Designer Modal -->
+    <div id="designerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Add New Designer</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="designerForm">
+                <input type="hidden" id="designerId">
+                <div class="mb-4">
+                    <label for="designerName" class="block text-sm font-medium text-gray-700 mb-1">Designer Name</label>
+                    <input type="text" id="designerName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="monthlySales" class="block text-sm font-medium text-gray-700 mb-1">Monthly Sales ($)</label>
+                        <input type="number" id="monthlySales" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="weeklySales" class="block text-sm font-medium text-gray-700 mb-1">Weekly Sales ($)</label>
+                        <input type="number" id="weeklySales" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="appointments" class="block text-sm font-medium text-gray-700 mb-1">Appointments</label>
+                        <input type="number" id="appointments" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="sales" class="block text-sm font-medium text-gray-700 mb-1">Sales</label>
+                        <input type="number" id="sales" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="monthlyGoal" class="block text-sm font-medium text-gray-700 mb-1">Monthly Goal ($)</label>
+                    <input type="number" id="monthlyGoal" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" id="cancelButton" class="mr-2 px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">Save Designer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Franchisee Configuration
+        const FRANCHISEE_CONFIG = {
+            franchiseId: 'franchise_001',
+            franchiseName: 'Downtown Location',
+            franchiseLocation: 'New York, NY',
+            apiEndpoint: 'https://api.franchise001.com/v1',
+            regionalEndpoint: 'https://api.regionalplatform.com/v1',
+            storageKey: 'franchisee_sales_data',
+            autoSyncInterval: 30000, // 30 seconds
+            maxRetries: 3,
+            enableRegionalSync: true
+        };
+
+        // Franchisee Data Manager Class
+        class FranchiseeDataManager {
+            constructor() {
+                this.franchiseeData = this.loadFranchiseeData();
+                this.regionalBenchmarks = this.loadRegionalBenchmarks();
+                this.isOnline = navigator.onLine;
+                this.lastRegionalSync = null;
+                this.currentTimeframe = 'month';
+                this.setupEventListeners();
+                this.startAutoSync();
+            }
+
+            loadFranchiseeData() {
+                try {
+                    const stored = localStorage.getItem(FRANCHISEE_CONFIG.storageKey);
+                    if (stored) {
+                        return JSON.parse(stored);
+                    }
+                } catch (error) {
+                    console.warn('Failed to load franchisee data:', error);
+                }
+                return this.generateSampleFranchiseeData();
+            }
+
+            generateSampleFranchiseeData() {
+                return {
+                    franchiseInfo: {
+                        id: FRANCHISEE_CONFIG.franchiseId,
+                        name: FRANCHISEE_CONFIG.franchiseName,
+                        location: FRANCHISEE_CONFIG.franchiseLocation
+                    },
+                    designers: [
+                        {
+                            id: 1,
+                            name: "Emma Johnson",
+                            monthlySales: 42500,
+                            weeklySales: 12800,
+                            appointments: 15,
+                            sales: 8,
+                            monthlyGoal: 50000,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            regionalRank: null,
+                            lastSyncedToRegional: null
+                        },
+                        {
+                            id: 2,
+                            name: "Michael Chen",
+                            monthlySales: 38700,
+                            weeklySales: 9500,
+                            appointments: 12,
+                            sales: 7,
+                            monthlyGoal: 45000,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            regionalRank: null,
+                            lastSyncedToRegional: null
+                        },
+                        {
+                            id: 3,
+                            name: "Sophia Rodriguez",
+                            monthlySales: 29800,
+                            weeklySales: 11200,
+                            appointments: 14,
+                            sales: 6,
+                            monthlyGoal: 40000,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            regionalRank: null,
+                            lastSyncedToRegional: null
+                        },
+                        {
+                            id: 4,
+                            name: "James Wilson",
+                            monthlySales: 13500,
+                            weeklySales: 9300,
+                            appointments: 10,
+                            sales: 4,
+                            monthlyGoal: 24000,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            regionalRank: null,
+                            lastSyncedToRegional: null
+                        }
+                    ],
+                    lastLocalSync: new Date().toISOString(),
+                    version: '1.0.0'
+                };
+            }
+
+            loadRegionalBenchmarks() {
+                // Simulate regional benchmarks - in real implementation, this would come from regional API
+                return {
+                    avgMonthlySales: 32000,
+                    avgClosingRate: 65.5,
+                    avgTicketSize: 1850,
+                    totalFranchises: 5,
+                    totalDesigners: 18,
+                    topPerformers: [
+                        { name: "Isabella Garcia (LA)", sales: 48200, franchiseId: 'franchise_002' },
+                        { name: "Emma Johnson (NYC)", sales: 42500, franchiseId: 'franchise_001' },
+                        { name: "William Brown (Chicago)", sales: 41800, franchiseId: 'franchise_003' }
+                    ],
+                    conversionLeaders: [
+                        { name: "Sarah Kim (Seattle)", conversionRate: 78.5, franchiseId: 'franchise_004' },
+                        { name: "Emma Johnson (NYC)", conversionRate: 73.3, franchiseId: 'franchise_001' },
+                        { name: "Marcus Davis (Miami)", conversionRate: 71.2, franchiseId: 'franchise_005' }
+                    ],
+                    ticketLeaders: [
+                        { name: "Alexander Stone (Boston)", avgTicket: 2450, franchiseId: 'franchise_003' },
+                        { name: "Victoria Chen (SF)", avgTicket: 2280, franchiseId: 'franchise_002' },
+                        { name: "Michael Chen (NYC)", avgTicket: 2150, franchiseId: 'franchise_001' }
+                    ],
+                    lastUpdated: new Date().toISOString()
+                };
+            }
+
+            saveFranchiseeData() {
+                try {
+                    localStorage.setItem(FRANCHISEE_CONFIG.storageKey, JSON.stringify(this.franchiseeData));
+                    this.showNotification('Data saved locally', 'success');
+                } catch (error) {
+                    console.error('Failed to save franchisee data:', error);
+                    this.showNotification('Failed to save data locally', 'error');
+                }
+            }
+
+            async syncWithRegional() {
+                if (!this.isOnline || !FRANCHISEE_CONFIG.enableRegionalSync) {
+                    this.showNotification('Offline - will sync when connection is restored', 'warning');
+                    return;
+                }
+
+                try {
+                    this.showNotification('Syncing with regional dashboard...', 'info');
+                    this.updateSyncIndicator(true);
+
+                    // Prepare data for regional sync
+                    const syncData = {
+                        franchiseId: FRANCHISEE_CONFIG.franchiseId,
+                        franchiseInfo: this.franchiseeData.franchiseInfo,
+                        designers: this.franchiseeData.designers.map(designer => ({
+                            ...designer,
+                            franchiseId: FRANCHISEE_CONFIG.franchiseId,
+                            franchiseName: FRANCHISEE_CONFIG.franchiseName,
+                            franchiseLocation: FRANCHISEE_CONFIG.franchiseLocation,
+                            lastSyncedAt: new Date().toISOString()
+                        })),
+                        syncTimestamp: new Date().toISOString()
+                    };
+
+                    // Simulate API call to regional system
+                    const response = await this.makeAPICall('POST', '/regional/sync', syncData);
+
+                    if (response.success) {
+                        // Update regional rankings from response
+                        if (response.regionalRankings) {
+                            this.updateRegionalRankings(response.regionalRankings);
+                        }
+
+                        // Update benchmarks
+                        if (response.benchmarks) {
+                            this.regionalBenchmarks = response.benchmarks;
+                        }
+
+                        this.lastRegionalSync = new Date().toISOString();
+                        this.franchiseeData.lastRegionalSync = this.lastRegionalSync;
+                        this.saveFranchiseeData();
+                        
+                        this.showNotification('Successfully synced with regional dashboard', 'success');
+                    }
+                } catch (error) {
+                    console.error('Regional sync failed:', error);
+                    this.showNotification('Regional sync failed - data saved locally', 'warning');
+                } finally {
+                    this.updateSyncIndicator(false);
+                }
+            }
+
+            updateRegionalRankings(rankings) {
+                this.franchiseeData.designers.forEach(designer => {
+                    const regionalData = rankings.find(r => 
+                        r.name.includes(designer.name) && r.franchiseId === FRANCHISEE_CONFIG.franchiseId
+                    );
+                    if (regionalData) {
+                        designer.regionalRank = regionalData.regionalRank;
+                        designer.lastSyncedToRegional = new Date().toISOString();
+                    }
+                });
+            }
+
+            async makeAPICall(method, endpoint, data = null, retries = 0) {
+                try {
+                    const options = {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.getAuthToken()}`
+                        }
+                    };
+
+                    if (data) {
+                        options.body = JSON.stringify(data);
+                    }
+
+                    // Simulate API response for demo
+                    await this.delay(800 + Math.random() * 1200);
+                    
+                    if (Math.random() > 0.05) { // 95% success rate
+                        return {
+                            success: true,
+                            regionalRankings: this.generateMockRegionalRankings(),
+                            benchmarks: this.regionalBenchmarks
+                        };
+                    } else {
+                        throw new Error('Simulated API failure');
+                    }
+                } catch (error) {
+                    if (retries < FRANCHISEE_CONFIG.maxRetries) {
+                        await this.delay(1000 * (retries + 1));
+                        return this.makeAPICall(method, endpoint, data, retries + 1);
+                    }
+                    throw error;
+                }
+            }
+
+            generateMockRegionalRankings() {
+                return this.franchiseeData.designers.map((designer, index) => ({
+                    name: designer.name,
+                    franchiseId: FRANCHISEE_CONFIG.franchiseId,
+                    regionalRank: Math.floor(Math.random() * 15) + 1, // Random rank 1-15
+                    performanceScore: 85 - (index * 5) + Math.random() * 10
+                }));
+            }
+
+            getAuthToken() {
+                return localStorage.getItem('franchisee_auth_token') || 'franchisee_demo_token';
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            setupEventListeners() {
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.showNotification('Connection restored - syncing with regional', 'success');
+                    this.syncWithRegional();
+                });
+
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.showNotification('Working offline - data cached locally', 'warning');
+                });
+            }
+
+            startAutoSync() {
+                setInterval(() => {
+                    if (this.isOnline && FRANCHISEE_CONFIG.enableRegionalSync) {
+                        this.syncWithRegional();
+                    } else {
+                        this.saveFranchiseeData();
+                    }
+                }, FRANCHISEE_CONFIG.autoSyncInterval);
+            }
+
+            updateSyncIndicator(syncing) {
+                const syncIndicator = document.getElementById('syncIndicator');
+                const syncText = document.getElementById('syncText');
+                
+                if (syncing) {
+                    syncIndicator.className = 'w-2 h-2 rounded-full bg-yellow-400 mr-2 sync-indicator';
+                    syncText.textContent = 'Syncing...';
+                } else {
+                    syncIndicator.className = 'w-2 h-2 rounded-full bg-green-400 mr-2';
+                    syncText.textContent = 'Synced with Regional';
+                }
+            }
+
+            // CRUD Operations
+            addDesigner(designer) {
+                designer.id = Date.now();
+                designer.createdAt = new Date().toISOString();
+                designer.updatedAt = new Date().toISOString();
+                designer.regionalRank = null;
+                designer.lastSyncedToRegional = null;
+                this.franchiseeData.designers.push(designer);
+                this.saveFranchiseeData();
+                
+                // Trigger immediate sync for new designer
+                if (this.isOnline) {
+                    setTimeout(() => this.syncWithRegional(), 1000);
+                }
+                
+                return designer;
+            }
+
+            updateDesigner(id, updates) {
+                const index = this.franchiseeData.designers.findIndex(d => d.id === id);
+                if (index !== -1) {
+                    this.franchiseeData.designers[index] = {
+                        ...this.franchiseeData.designers[index],
+                        ...updates,
+                        updatedAt: new Date().toISOString()
+                    };
+                    this.saveFranchiseeData();
+                    
+                    // Trigger sync for updated designer
+                    if (this.isOnline) {
+                        setTimeout(() => this.syncWithRegional(), 1000);
+                    }
+                    
+                    return this.franchiseeData.designers[index];
+                }
+                return null;
+            }
+
+            deleteDesigner(id) {
+                const index = this.franchiseeData.designers.findIndex(d => d.id === id);
+                if (index !== -1) {
+                    const deleted = this.franchiseeData.designers.splice(index, 1)[0];
+                    this.saveFranchiseeData();
+                    
+                    // Trigger sync to remove from regional
+                    if (this.isOnline) {
+                        setTimeout(() => this.syncWithRegional(), 1000);
+                    }
+                    
+                    return deleted;
+                }
+                return null;
+            }
+
+            getDesigners() {
+                return this.franchiseeData.designers;
+            }
+
+            calculateMetrics(designer) {
+                const avgTicket = designer.sales > 0 ? designer.weeklySales / designer.sales : 0;
+                const closingRate = designer.appointments > 0 ? (designer.sales / designer.appointments) * 100 : 0;
+                const goalProgress = (designer.monthlySales / designer.monthlyGoal) * 100;
+                
+                return { avgTicket, closingRate, goalProgress };
+            }
+
+            getFranchiseMetrics() {
+                const designers = this.franchiseeData.designers;
+                const timeframeData = this.getTimeframeData(designers);
+                
+                const totalSales = timeframeData.reduce((sum, d) => sum + d.sales, 0);
+                const totalGoal = timeframeData.reduce((sum, d) => sum + d.goal, 0);
+                const totalAppointments = timeframeData.reduce((sum, d) => sum + d.appointments, 0);
+                const totalSalesCount = timeframeData.reduce((sum, d) => sum + d.salesCount, 0);
+
+                return {
+                    totalSales,
+                    totalGoal,
+                    goalProgress: totalGoal > 0 ? (totalSales / totalGoal) * 100 : 0,
+                    avgClosingRate: totalAppointments > 0 ? (totalSalesCount / totalAppointments) * 100 : 0,
+                    designerCount: designers.length,
+                    avgSalesPerDesigner: designers.length > 0 ? totalSales / designers.length : 0,
+                    timeframe: this.currentTimeframe
+                };
+            }
+
+            getTimeframeData(designers) {
+                return designers.map(designer => {
+                    switch (this.currentTimeframe) {
+                        case 'week':
+                            return {
+                                ...designer,
+                                sales: designer.weeklySales,
+                                goal: designer.monthlyGoal / 4.33, // Approximate weekly goal
+                                appointments: Math.round(designer.appointments / 4.33),
+                                salesCount: Math.round(designer.sales / 4.33)
+                            };
+                        case 'ytd':
+                            const monthsInYear = new Date().getMonth() + 1;
+                            return {
+                                ...designer,
+                                sales: designer.monthlySales * monthsInYear,
+                                goal: designer.monthlyGoal * 12,
+                                appointments: designer.appointments * monthsInYear,
+                                salesCount: designer.sales * monthsInYear
+                            };
+                        case 'month':
+                        default:
+                            return {
+                                ...designer,
+                                sales: designer.monthlySales,
+                                goal: designer.monthlyGoal,
+                                appointments: designer.appointments,
+                                salesCount: designer.sales
+                            };
+                    }
+                });
+            }
+
+            setTimeframe(timeframe) {
+                this.currentTimeframe = timeframe;
+            }
+
+            getTimeframeLabel() {
+                switch (this.currentTimeframe) {
+                    case 'week':
+                        return 'This Week';
+                    case 'ytd':
+                        return 'Year to Date';
+                    case 'month':
+                    default:
+                        return 'This Month';
+                }
+            }
+
+            exportData(format = 'json') {
+                const franchiseMetrics = this.getFranchiseMetrics();
+                const exportData = {
+                    franchiseInfo: this.franchiseeData.franchiseInfo,
+                    franchiseMetrics,
+                    designers: this.franchiseeData.designers,
+                    regionalBenchmarks: this.regionalBenchmarks,
+                    exportedAt: new Date().toISOString(),
+                    lastRegionalSync: this.lastRegionalSync
+                };
+
+                if (format === 'csv') {
+                    return this.convertToCSV(this.franchiseeData.designers);
+                }
+
+                return JSON.stringify(exportData, null, 2);
+            }
+
+            convertToCSV(designers) {
+                const headers = [
+                    'Name', 'Monthly Sales', 'Weekly Sales', 'Appointments', 'Sales',
+                    'Monthly Goal', 'Avg Ticket', 'Closing Rate', 'Goal Progress',
+                    'Regional Rank', 'Created At', 'Updated At'
+                ];
+
+                const rows = designers.map(d => {
+                    const { avgTicket, closingRate, goalProgress } = this.calculateMetrics(d);
+                    return [
+                        d.name,
+                        d.monthlySales,
+                        d.weeklySales,
+                        d.appointments,
+                        d.sales,
+                        d.monthlyGoal,
+                        avgTicket.toFixed(2),
+                        closingRate.toFixed(1),
+                        goalProgress.toFixed(1),
+                        d.regionalRank || 'N/A',
+                        d.createdAt,
+                        d.updatedAt
+                    ];
+                });
+
+                return [headers, ...rows].map(row => row.join(',')).join('\n');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${this.getNotificationClass(type)}`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 5000);
+            }
+
+            getNotificationClass(type) {
+                const classes = {
+                    success: 'bg-green-500 text-white',
+                    error: 'bg-red-500 text-white',
+                    warning: 'bg-yellow-500 text-black',
+                    info: 'bg-blue-500 text-white'
+                };
+                return classes[type] || classes.info;
+            }
+        }
+
+        // Initialize Franchisee Data Manager
+        const franchiseeDataManager = new FranchiseeDataManager();
+        let designers = franchiseeDataManager.getDesigners();
+
+        // DOM elements
+        const designerTableBody = document.getElementById('designerTableBody');
+        const addDesignerBtn = document.getElementById('addDesigner');
+        const designerModal = document.getElementById('designerModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelButton = document.getElementById('cancelButton');
+        const designerForm = document.getElementById('designerForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const designerId = document.getElementById('designerId');
+        const searchDesigner = document.getElementById('searchDesigner');
+        const exportDataBtn = document.getElementById('exportData');
+        const viewRegionalDashboardBtn = document.getElementById('viewRegionalDashboard');
+        const franchiseSettingsBtn = document.getElementById('franchiseSettings');
+        const franchiseSettingsModal = document.getElementById('franchiseSettingsModal');
+        const closeFranchiseModalBtn = document.getElementById('closeFranchiseModal');
+        const cancelFranchiseSettingsBtn = document.getElementById('cancelFranchiseSettings');
+        const franchiseSettingsForm = document.getElementById('franchiseSettingsForm');
+
+        // Format currency
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        };
+
+        // Render franchise summary cards
+        const renderFranchiseSummary = () => {
+            const metrics = franchiseeDataManager.getFranchiseMetrics();
+            const benchmarks = franchiseeDataManager.regionalBenchmarks;
+            const timeframeLabel = franchiseeDataManager.getTimeframeLabel();
+
+            // Update card titles based on timeframe
+            document.getElementById('salesCardTitle').textContent = `Franchise ${timeframeLabel} Sales`;
+            
+            // Update comparison text
+            const comparisonTexts = {
+                'week': 'vs last week',
+                'month': 'vs last month', 
+                'ytd': 'vs last year'
+            };
+            document.getElementById('salesComparisonText').textContent = comparisonTexts[franchiseeDataManager.currentTimeframe];
+
+            document.getElementById('franchiseMonthlySales').textContent = formatCurrency(metrics.totalSales);
+            document.getElementById('activeDesigners').textContent = metrics.designerCount;
+            document.getElementById('avgClosingRate').textContent = `${metrics.avgClosingRate.toFixed(1)}%`;
+            document.getElementById('goalProgress').textContent = `${metrics.goalProgress.toFixed(1)}%`;
+            document.getElementById('goalProgressBar').style.width = `${Math.min(metrics.goalProgress, 100)}%`;
+            document.getElementById('goalProgressText').textContent = 
+                `${formatCurrency(metrics.totalSales)} of ${formatCurrency(metrics.totalGoal)}`;
+
+            // Regional comparisons (adjusted for timeframe)
+            let benchmarkSales = benchmarks.avgMonthlySales;
+            if (franchiseeDataManager.currentTimeframe === 'week') {
+                benchmarkSales = benchmarks.avgMonthlySales / 4.33;
+            } else if (franchiseeDataManager.currentTimeframe === 'ytd') {
+                benchmarkSales = benchmarks.avgMonthlySales * (new Date().getMonth() + 1);
+            }
+
+            const salesDiff = ((metrics.totalSales / metrics.designerCount - benchmarkSales) / benchmarkSales * 100);
+            const closingDiff = metrics.avgClosingRate - benchmarks.avgClosingRate;
+
+            document.getElementById('salesGrowth').textContent = `${salesDiff > 0 ? '+' : ''}${salesDiff.toFixed(1)}%`;
+            document.getElementById('closingRateVsRegional').textContent = `${closingDiff > 0 ? '+' : ''}${closingDiff.toFixed(1)}%`;
+
+            // Update benchmark indicators
+            updateBenchmarkIndicator('closingRateBenchmark', closingDiff);
+            updateBenchmarkIndicator('salesBenchmark', salesDiff);
+
+            // Simulate regional standing
+            document.getElementById('regionalStanding').textContent = '#2';
+            document.getElementById('regionalStandingText').textContent = `of ${benchmarks.totalFranchises} franchises`;
+            document.getElementById('regionalRankText').textContent = 'Regional rank: #2';
+        };
+
+        const updateBenchmarkIndicator = (elementId, diff) => {
+            const element = document.getElementById(elementId);
+            if (diff > 5) {
+                element.className = 'benchmark-indicator above-benchmark';
+            } else if (diff < -5) {
+                element.className = 'benchmark-indicator below-benchmark';
+            } else {
+                element.className = 'benchmark-indicator at-benchmark';
+            }
+        };
+
+        // Render local leaderboard
+        const renderLocalLeaderboard = () => {
+            const sortedDesigners = [...designers].sort((a, b) => b.monthlySales - a.monthlySales);
+            const leaderboard = document.getElementById('localLeaderboard');
+            
+            leaderboard.innerHTML = '';
+
+            sortedDesigners.slice(0, 3).forEach((designer, index) => {
+                const { closingRate } = franchiseeDataManager.calculateMetrics(designer);
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 rounded-lg mb-2 hover:bg-gray-50 transition-colors';
+                
+                const rankClass = `rank-${index + 1}`;
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+                const isRegionalTop10 = designer.regionalRank && designer.regionalRank <= 10;
+                
+                item.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="rank-badge ${rankClass} mr-3 ${isRegionalTop10 ? 'regional-indicator' : ''}">
+                            ${medal}
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-900">${designer.name}</div>
+                            <div class="text-sm text-gray-500">
+                                ${designer.regionalRank ? `Regional #${designer.regionalRank}` : 'Syncing...'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-gray-900">${formatCurrency(designer.monthlySales)}</div>
+                        <div class="text-sm text-gray-500">${closingRate.toFixed(1)}% close rate</div>
+                    </div>
+                `;
+                
+                leaderboard.appendChild(item);
+            });
+        };
+
+        // Render regional insights
+        const renderRegionalInsights = () => {
+            const metrics = franchiseeDataManager.getFranchiseMetrics();
+            const benchmarks = franchiseeDataManager.regionalBenchmarks;
+
+            // Update comparison indicators
+            const salesComparison = metrics.totalSales / metrics.designerCount > benchmarks.avgMonthlySales ? 'Above avg' : 
+                                   metrics.totalSales / metrics.designerCount < benchmarks.avgMonthlySales * 0.9 ? 'Below avg' : 'At avg';
+            const closingComparison = metrics.avgClosingRate > benchmarks.avgClosingRate ? 'Above avg' : 
+                                     metrics.avgClosingRate < benchmarks.avgClosingRate * 0.9 ? 'Below avg' : 'At avg';
+
+            document.getElementById('salesVsRegional').textContent = salesComparison;
+            document.getElementById('closingVsRegional').textContent = closingComparison;
+            document.getElementById('ticketVsRegional').textContent = 'Below avg'; // Simulated
+
+            // Sales Rankings
+            const salesRankings = document.getElementById('regionalSalesRankings');
+            salesRankings.innerHTML = '';
+            benchmarks.topPerformers.slice(0, 3).forEach((performer, index) => {
+                const isOurDesigner = performer.franchiseId === FRANCHISEE_CONFIG.franchiseId;
+                const item = document.createElement('div');
+                item.className = `text-xs flex justify-between items-center ${isOurDesigner ? 'font-semibold text-blue-600' : 'text-gray-600'}`;
+                item.innerHTML = `
+                    <span>${index + 1}. ${performer.name}</span>
+                    <span>${formatCurrency(performer.sales)}</span>
+                `;
+                salesRankings.appendChild(item);
+            });
+
+            // Conversion Rankings
+            const conversionRankings = document.getElementById('regionalConversionRankings');
+            conversionRankings.innerHTML = '';
+            benchmarks.conversionLeaders.slice(0, 3).forEach((leader, index) => {
+                const isOurDesigner = leader.franchiseId === FRANCHISEE_CONFIG.franchiseId;
+                const item = document.createElement('div');
+                item.className = `text-xs flex justify-between items-center ${isOurDesigner ? 'font-semibold text-blue-600' : 'text-gray-600'}`;
+                item.innerHTML = `
+                    <span>${index + 1}. ${leader.name}</span>
+                    <span>${leader.conversionRate.toFixed(1)}%</span>
+                `;
+                conversionRankings.appendChild(item);
+            });
+
+            // Ticket Size Rankings
+            const ticketRankings = document.getElementById('regionalTicketRankings');
+            ticketRankings.innerHTML = '';
+            benchmarks.ticketLeaders.slice(0, 3).forEach((leader, index) => {
+                const isOurDesigner = leader.franchiseId === FRANCHISEE_CONFIG.franchiseId;
+                const item = document.createElement('div');
+                item.className = `text-xs flex justify-between items-center ${isOurDesigner ? 'font-semibold text-blue-600' : 'text-gray-600'}`;
+                item.innerHTML = `
+                    <span>${index + 1}. ${leader.name}</span>
+                    <span>${formatCurrency(leader.avgTicket)}</span>
+                `;
+                ticketRankings.appendChild(item);
+            });
+        };
+
+        // Render designers table
+        const renderDesigners = (designersToRender = designers) => {
+            designerTableBody.innerHTML = '';
+            
+            // Get timeframe-adjusted data
+            const timeframeData = franchiseeDataManager.getTimeframeData(designersToRender);
+            
+            // Sort by timeframe sales for local ranking
+            const sortedDesigners = [...timeframeData].sort((a, b) => b.sales - a.sales);
+            
+            sortedDesigners.forEach((designer, index) => {
+                const avgTicket = designer.salesCount > 0 ? designer.sales / designer.salesCount : 0;
+                const closingRate = designer.appointments > 0 ? (designer.salesCount / designer.appointments) * 100 : 0;
+                const goalProgress = (designer.sales / designer.goal) * 100;
+                const localRank = index + 1;
+                const isRegionalTop10 = designer.regionalRank && designer.regionalRank <= 10;
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                const rankClass = localRank <= 3 ? `rank-${localRank}` : 'rank-other';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="rank-badge ${rankClass} ${isRegionalTop10 ? 'regional-indicator' : ''}">
+                            ${localRank}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 flex-shrink-0 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                                ${designer.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${designer.name}</div>
+                                <div class="text-xs text-gray-500">
+                                    ${designer.lastSyncedToRegional ? 
+                                        `Synced ${new Date(designer.lastSyncedToRegional).toLocaleTimeString()}` : 
+                                        'Pending sync'}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${formatCurrency(designer.sales)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${formatCurrency(designer.weeklySales)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${formatCurrency(avgTicket)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${closingRate.toFixed(1)}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end">
+                            <div class="mr-2 w-16 progress-bar">
+                                <div class="progress ${goalProgress >= 100 ? 'bg-green-500' : goalProgress >= 75 ? 'bg-blue-500' : goalProgress >= 50 ? 'bg-yellow-500' : 'bg-red-500'}" 
+                                    style="width: ${Math.min(goalProgress, 100)}%"></div>
+                            </div>
+                            <span class="text-sm font-medium">${goalProgress.toFixed(1)}%</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-bold ${isRegionalTop10 ? 'text-yellow-600' : 'text-gray-900'}">
+                            ${designer.regionalRank ? `#${designer.regionalRank}` : '---'}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${isRegionalTop10 ? 'Top 10!' : 'Regional'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900 mr-2 edit-btn" data-id="${designer.id}">Edit</button>
+                        <button class="text-red-600 hover:text-red-900 delete-btn" data-id="${designer.id}">Delete</button>
+                    </td>
+                `;
+                
+                designerTableBody.appendChild(row);
+            });
+            
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => editDesigner(parseInt(btn.dataset.id)));
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => deleteDesigner(parseInt(btn.dataset.id)));
+            });
+        };
+
+        // Modal functions
+        const openAddModal = () => {
+            modalTitle.textContent = 'Add New Designer';
+            designerId.value = '';
+            designerForm.reset();
+            designerModal.classList.remove('hidden');
+        };
+
+        const editDesigner = (id) => {
+            const designer = designers.find(d => d.id === id);
+            if (!designer) return;
+            
+            modalTitle.textContent = 'Edit Designer';
+            designerId.value = designer.id;
+            document.getElementById('designerName').value = designer.name;
+            document.getElementById('monthlySales').value = designer.monthlySales;
+            document.getElementById('weeklySales').value = designer.weeklySales;
+            document.getElementById('appointments').value = designer.appointments;
+            document.getElementById('sales').value = designer.sales;
+            document.getElementById('monthlyGoal').value = designer.monthlyGoal;
+            
+            designerModal.classList.remove('hidden');
+        };
+
+        const deleteDesigner = (id) => {
+            if (confirm('Are you sure you want to delete this designer? This will also remove them from the regional dashboard.')) {
+                franchiseeDataManager.deleteDesigner(id);
+                designers = franchiseeDataManager.getDesigners();
+                renderAll();
+            }
+        };
+
+        const closeModal = () => {
+            designerModal.classList.add('hidden');
+        };
+
+        // Franchise Settings functions
+        const openFranchiseSettings = () => {
+            const franchiseInfo = franchiseeDataManager.franchiseeData.franchiseInfo;
+            
+            document.getElementById('franchiseName').value = franchiseInfo.name;
+            document.getElementById('franchiseLocation').value = franchiseInfo.location;
+            document.getElementById('franchiseId').value = franchiseInfo.id;
+            document.getElementById('enableRegionalSync').checked = FRANCHISEE_CONFIG.enableRegionalSync;
+            
+            franchiseSettingsModal.classList.remove('hidden');
+        };
+
+        const closeFranchiseSettings = () => {
+            franchiseSettingsModal.classList.add('hidden');
+        };
+
+        const saveFranchiseSettings = (e) => {
+            e.preventDefault();
+            
+            const newName = document.getElementById('franchiseName').value;
+            const newLocation = document.getElementById('franchiseLocation').value;
+            const enableSync = document.getElementById('enableRegionalSync').checked;
+            
+            // Update franchise info
+            franchiseeDataManager.franchiseeData.franchiseInfo.name = newName;
+            franchiseeDataManager.franchiseeData.franchiseInfo.location = newLocation;
+            
+            // Update config
+            FRANCHISEE_CONFIG.franchiseName = newName;
+            FRANCHISEE_CONFIG.franchiseLocation = newLocation;
+            FRANCHISEE_CONFIG.enableRegionalSync = enableSync;
+            
+            // Update header display
+            document.querySelector('h1').textContent = `${newName} Dashboard`;
+            document.querySelector('.text-blue-100').textContent = `${newLocation} • Franchise ID: ${franchiseeDataManager.franchiseeData.franchiseInfo.id}`;
+            
+            // Save changes
+            franchiseeDataManager.saveFranchiseeData();
+            
+            // Trigger sync if enabled
+            if (enableSync && franchiseeDataManager.isOnline) {
+                setTimeout(() => franchiseeDataManager.syncWithRegional(), 1000);
+            }
+            
+            franchiseeDataManager.showNotification('Franchise settings updated successfully', 'success');
+            closeFranchiseSettings();
+        };
+
+        const saveDesigner = (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('designerName').value;
+            const monthlySales = parseFloat(document.getElementById('monthlySales').value);
+            const weeklySales = parseFloat(document.getElementById('weeklySales').value);
+            const appointments = parseInt(document.getElementById('appointments').value);
+            const sales = parseInt(document.getElementById('sales').value);
+            const monthlyGoal = parseFloat(document.getElementById('monthlyGoal').value);
+            
+            const designerData = {
+                name,
+                monthlySales,
+                weeklySales,
+                appointments,
+                sales,
+                monthlyGoal
+            };
+            
+            if (designerId.value) {
+                franchiseeDataManager.updateDesigner(parseInt(designerId.value), designerData);
+            } else {
+                franchiseeDataManager.addDesigner(designerData);
+            }
+            
+            designers = franchiseeDataManager.getDesigners();
+            renderAll();
+            closeModal();
+        };
+
+        // Search functionality
+        searchDesigner.addEventListener('input', () => {
+            const searchTerm = searchDesigner.value.toLowerCase();
+            const filteredDesigners = designers.filter(d => 
+                d.name.toLowerCase().includes(searchTerm)
+            );
+            renderDesigners(filteredDesigners);
+        });
+
+        // Update connection status
+        const updateConnectionStatus = () => {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (navigator.onLine) {
+                statusIndicator.className = 'w-2 h-2 rounded-full bg-green-400 mr-2';
+                statusText.textContent = 'Online';
+            } else {
+                statusIndicator.className = 'w-2 h-2 rounded-full bg-red-400 mr-2';
+                statusText.textContent = 'Offline';
+            }
+        };
+
+        // Timeframe change handler
+        const timeframeSelect = document.getElementById('timeframe');
+        timeframeSelect.addEventListener('change', (e) => {
+            franchiseeDataManager.setTimeframe(e.target.value);
+            
+            // Update table header
+            const headerTexts = {
+                'week': 'Weekly Sales',
+                'month': 'Monthly Sales',
+                'ytd': 'YTD Sales'
+            };
+            document.getElementById('salesColumnHeader').textContent = headerTexts[e.target.value];
+            
+            renderAll();
+        });
+
+        // Event listeners
+        addDesignerBtn.addEventListener('click', openAddModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelButton.addEventListener('click', closeModal);
+        designerForm.addEventListener('submit', saveDesigner);
+        
+        // Franchise settings event listeners
+        franchiseSettingsBtn.addEventListener('click', openFranchiseSettings);
+        closeFranchiseModalBtn.addEventListener('click', closeFranchiseSettings);
+        cancelFranchiseSettingsBtn.addEventListener('click', closeFranchiseSettings);
+        franchiseSettingsForm.addEventListener('submit', saveFranchiseSettings);
+
+        exportDataBtn.addEventListener('click', () => {
+            const format = confirm('Export as CSV? (Cancel for JSON)') ? 'csv' : 'json';
+            const data = franchiseeDataManager.exportData(format);
+            const filename = `${FRANCHISEE_CONFIG.franchiseName.toLowerCase().replace(/\s+/g, '_')}_sales_${new Date().toISOString().split('T')[0]}.${format}`;
+            
+            const blob = new Blob([data], { type: format === 'csv' ? 'text/csv' : 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        viewRegionalDashboardBtn.addEventListener('click', () => {
+            franchiseeDataManager.showNotification('Opening regional dashboard...', 'info');
+            // In a real implementation, this would navigate to the regional dashboard
+            setTimeout(() => {
+                alert('This would open the regional dashboard in a new tab/window in a real implementation.');
+            }, 500);
+        });
+
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Render all components
+        const renderAll = () => {
+            renderFranchiseSummary();
+            renderLocalLeaderboard();
+            renderRegionalInsights();
+            renderDesigners();
+        };
+
+        // Initialize
+        updateConnectionStatus();
+        renderAll();
+
+        // Initial sync with regional
+        setTimeout(() => {
+            franchiseeDataManager.syncWithRegional();
+        }, 2000);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984cbe74a6ff7564',t:'MTc1ODgyNjYxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
